@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FaWW EAP & 피지컬케어 제안서 생성기</title>
+  <!-- Google Fonts: Inter, Outfit, Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome for Premium Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <!-- On-Screen JS Error Reporter for Debugging -->
+  <script>
+    window.addEventListener('error', function(e) {
+      const div = document.createElement('div');
+      div.className = 'no-print';
+      div.style.position = 'fixed';
+      div.style.top = '0';
+      div.style.left = '0';
+      div.style.width = '100%';
+      div.style.background = '#ef4444';
+      div.style.color = 'white';
+      div.style.padding = '16px';
+      div.style.zIndex = '999999';
+      div.style.fontSize = '14px';
+      div.style.fontWeight = 'bold';
+      div.style.fontFamily = 'monospace';
+      div.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+      div.innerHTML = '❌ JavaScript Error: ' + e.message + ' <br><small>Location: ' + e.filename + ':' + e.lineno + ':' + e.colno + '</small>';
+      document.body.appendChild(div);
+    });
+  </script>
+
+  <!-- 설정 패널 (사이드바) -->
+  <div class="sidebar no-print">
+    <div class="sidebar-header">
+      <div class="brand-logo-area">
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-sidebar-logo">
+        <span class="brand-name">Proposal Gen</span>
+      </div>
+      <p class="sidebar-subtitle">임직원 EAP 제안서 실시간 빌더</p>
+    </div>
+
+    <!-- 탭 내비게이션 바 추가 -->
+    <div class="sidebar-tabs-nav no-print">
+      <button class="tab-btn active" data-tab="ai"><i class="fa-solid fa-wand-magic-sparkles"></i> AI 생성</button>
+      <button class="tab-btn" data-tab="templates"><i class="fa-solid fa-paste"></i> 템플릿</button>
+      <button class="tab-btn" data-tab="elements"><i class="fa-solid fa-shapes"></i> 요소</button>
+      <button class="tab-btn" data-tab="themes"><i class="fa-solid fa-palette"></i> 테마</button>
+      <button class="tab-btn" data-tab="settings"><i class="fa-solid fa-sliders"></i> 설정</button>
+    </div>
+
+    <div class="sidebar-content">
+      <!-- Tab Panel 1: AI 생성 -->
+      <div class="tab-panel active" id="panel-ai">
+        <div class="panel-section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> AI 제안서 자동 완성</div>
+        <p class="panel-description">고객사의 요구사항이나 이메일 내용, 메모를 붙여넣으세요. AI가 분석하여 대표 컬러, 기업명, 날짜 및 적합한 EAP 프로그램을 자동으로 셋팅해 줍니다.</p>
+        
+        <div class="form-group">
+          <label for="ai-raw-text">고객사 요청 내용 / 메모</label>
+          <textarea id="ai-raw-text" placeholder="예: 이번에 카카오 임직원을 대상으로 제안서를 쓸 예정이야. 거북목과 허리 통증 위주의 피지컬케어가 중심이고, 강사는 총 6명에 1인당 25분 케어 조건으로 해줘. 대표 컬러는 카카오 옐로우 느낌으로 맞추고, 날짜는 2026.07.01로 기입해줘. 마인드 케어 프로그램도 추가해줘."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="ai-ref-file">레퍼런스 파일 업로드 (.txt, .md, .json)</label>
+          <div class="file-upload-wrapper">
+            <input type="file" id="ai-ref-file" accept=".txt,.md,.json,.csv,.html">
+            <div class="file-upload-btn" id="ai-ref-file-btn"><i class="fa-solid fa-file-import"></i> 레퍼런스 파일 불러오기</div>
+          </div>
+          <p class="help-text">텍스트 파일을 업로드하면 내용이 자동으로 요청 메모란에 입력됩니다.</p>
+        </div>
+
+        <button id="btn-ai-generate" class="btn-ai-action"><i class="fa-solid fa-circle-play"></i> AI 제안서 자동 생성</button>
+
+        <!-- AI 분석 시각화 -->
+        <div class="ai-processing-box hidden" id="ai-processing-status">
+          <div class="ai-progress-bar-container">
+            <div class="ai-progress-bar" id="ai-progress-fill"></div>
+          </div>
+          <div class="ai-status-text" id="ai-status-log">요청 내용 분석 중...</div>
+          <ul class="ai-log-list" id="ai-log-list">
+            <!-- 동적으로 분석 로그 추가 -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tab Panel 2: 템플릿 -->
+      <div class="tab-panel" id="panel-templates">
+        <div class="panel-section-title"><i class="fa-solid fa-paste"></i> 디자인 템플릿 프리셋</div>
+        <p class="panel-description">제안서의 전체적인 스타일과 레이아웃 프리셋을 원클릭으로 선택하여 적용합니다.</p>
+        
+        <div class="templates-grid">
+          <div class="template-card active" data-template="default" style="border-left: 5px solid #E05349;">
+            <div class="template-info">
+              <h4>정열의 레드 (기본)</h4>
+              <p>파우 기본 브랜드 아이덴티티 스타일</p>
+            </div>
+          </div>
+          <div class="template-card" data-template="classic-navy" style="border-left: 5px solid #1E3A8A;">
+            <div class="template-info">
+              <h4>클래식 네이비</h4>
+              <p>신뢰감과 대기업 제안에 적합한 차분한 스타일</p>
+            </div>
+          </div>
+          <div class="template-card" data-template="wellness-green" style="border-left: 5px solid #10B981;">
+            <div class="template-info">
+              <h4>치유의 웰니스 그린</h4>
+              <p>자연 친화적이고 건강 친화적인 힐링 스타일</p>
+            </div>
+          </div>
+          <div class="template-card" data-template="luxury-purple" style="border-left: 5px solid #8B5CF6;">
+            <div class="template-info">
+              <h4>럭셔리 바이올렛</h4>
+              <p>세련되고 트렌디한 프리미엄 복지 제안 스타일</p>
+            </div>
+          </div>
+          <div class="template-card" data-template="energy-orange" style="border-left: 5px solid #F97316;">
+            <div class="template-info">
+              <h4>에너제틱 오렌지</h4>
+              <p>활력 있고 역동적인 스타트업 맞춤 스타일</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Panel 3: 요소 -->
+      <div class="tab-panel" id="panel-elements">
+        <div class="panel-section-title"><i class="fa-solid fa-shapes"></i> 디자인 요소 추가</div>
+        <p class="panel-description">요소를 클릭하여 현재 편집 중인 슬라이드에 추가하세요. 추가된 요소는 드래그 앤 드롭으로 자유롭게 디자인할 수 있습니다.</p>
+        
+        <!-- 글상자 추가 -->
+        <div class="element-section">
+          <h5><i class="fa-solid fa-font"></i> 텍스트 상자</h5>
+          <div class="elements-list-row">
+            <button class="btn-element-add" data-element="text-title"><i class="fa-solid fa-heading"></i> 제목 추가</button>
+            <button class="btn-element-add" data-element="text-body"><i class="fa-solid fa-align-left"></i> 본문 추가</button>
+          </div>
+        </div>
+
+        <!-- 도형 추가 -->
+        <div class="element-section" style="margin-top: 18px;">
+          <h5><i class="fa-solid fa-square-poll-horizontal"></i> 도형 및 프레임</h5>
+          <div class="elements-list-row">
+            <button class="btn-element-add" data-element="shape-rect"><i class="fa-regular fa-square"></i> 사각형</button>
+            <button class="btn-element-add" data-element="shape-round-card"><i class="fa-solid fa-square-minus"></i> 라운드 카드</button>
+            <button class="btn-element-add" data-element="shape-divider"><i class="fa-solid fa-minus"></i> 구분선</button>
+          </div>
+        </div>
+
+        <!-- 아이콘 추가 -->
+        <div class="element-section" style="margin-top: 18px;">
+          <h5><i class="fa-solid fa-icons"></i> 프리미엄 웰니스 아이콘</h5>
+          <div class="icons-picker-grid">
+            <button class="icon-add-btn" data-icon="fa-star"><i class="fa-solid fa-star"></i></button>
+            <button class="icon-add-btn" data-icon="fa-lightbulb"><i class="fa-solid fa-lightbulb"></i></button>
+            <button class="icon-add-btn" data-icon="fa-shield-halved"><i class="fa-solid fa-shield-halved"></i></button>
+            <button class="icon-add-btn" data-icon="fa-trophy"><i class="fa-solid fa-trophy"></i></button>
+            <button class="icon-add-btn" data-icon="fa-dumbbell"><i class="fa-solid fa-dumbbell"></i></button>
+            <button class="icon-add-btn" data-icon="fa-heart"><i class="fa-solid fa-heart"></i></button>
+            <button class="icon-add-btn" data-icon="fa-map-location-dot"><i class="fa-solid fa-map-location-dot"></i></button>
+            <button class="icon-add-btn" data-icon="fa-phone"><i class="fa-solid fa-phone"></i></button>
+            <button class="icon-add-btn" data-icon="fa-envelope"><i class="fa-solid fa-envelope"></i></button>
+            <button class="icon-add-btn" data-icon="fa-circle-check"><i class="fa-solid fa-circle-check"></i></button>
+            <button class="icon-add-btn" data-icon="fa-award"><i class="fa-solid fa-award"></i></button>
+            <button class="icon-add-btn" data-icon="fa-hands-holding-child"><i class="fa-solid fa-hands-holding-child"></i></button>
+          </div>
+        </div>
+
+        <!-- 스티커 추가 -->
+        <div class="element-section" style="margin-top: 18px;">
+          <h5><i class="fa-solid fa-face-smile"></i> 마스코트 및 브랜드 스티커</h5>
+          <div class="stickers-picker-grid">
+            <button class="sticker-add-btn" data-sticker="pawmi-smile" title="미소 파우미">
+              <img src="이미지/파우미.png" alt="Pawmi">
+              <span>파우미</span>
+            </button>
+            <button class="sticker-add-btn" data-sticker="faww-logo" title="FaWW 로고">
+              <img src="이미지/파우 로고.png" alt="FaWW Logo" style="filter: brightness(0) invert(1);">
+              <span>FaWW 로고</span>
+            </button>
+            <button class="sticker-add-btn" data-sticker="physical-logo" title="피지컬케어 로고">
+              <img src="이미지/피지컬케어 로고.jpg" alt="Physical Care Logo">
+              <span>피지컬 로고</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Panel 4: 테마 -->
+      <div class="tab-panel" id="panel-themes">
+        <div class="panel-section-title"><i class="fa-solid fa-palette"></i> 테마 컬러 & 타이포그래피</div>
+        <p class="panel-description">제안서의 포인트 컬러 조합 및 폰트 설정을 수동으로 정밀 제어합니다.</p>
+        
+        <div class="form-group">
+          <label for="input-theme-color">제안서 포인트 테마 컬러</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="input-theme-color" value="#E05349">
+            <input type="text" id="input-theme-color-hex" value="#E05349" class="hex-input">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 18px;">
+          <label for="select-font-family">제안서 메인 타이포그래피</label>
+          <select id="select-font-family" class="theme-select-dropdown">
+            <option value="font-noto" selected>Noto Sans KR (국문 기본 권장)</option>
+            <option value="font-outfit">Outfit (영문 및 세련된 느낌)</option>
+            <option value="font-inter">Inter (모던 비즈니스 스타일)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tab Panel 5: 상세 설정 (기존 설정) -->
+      <div class="tab-panel" id="panel-settings">
+        <!-- 1. 대상 기업 설정 -->
+        <div class="form-section">
+          <h3><i class="fa-solid fa-building"></i> 제안 대상 기업 정보</h3>
+          <div class="form-group">
+            <label for="input-client-name">기업명 (국문/영문)</label>
+            <input type="text" id="input-client-name" value="SK STOA" placeholder="예: 카카오, SK STOA">
+          </div>
+          <div class="form-group">
+            <label for="input-client-logo">기업 로고 업로드</label>
+            <div class="file-upload-wrapper">
+              <input type="file" id="input-client-logo" accept="image/*">
+              <div class="file-upload-btn"><i class="fa-solid fa-cloud-arrow-up"></i> 로고 이미지 선택</div>
+            </div>
+            <p class="help-text">투명배경 PNG 권장. 미지정 시 기본 텍스트 표시</p>
+          </div>
+          <div class="form-group" id="logo-size-group">
+            <label for="input-logo-size">기업 로고 크기 조절 (높이: <span id="logo-size-val">45</span>px)</label>
+            <input type="range" id="input-logo-size" min="20" max="150" value="45" style="width: 100%; margin-top: 6px;">
+          </div>
+          <div class="form-group" id="brand-logo-size-group">
+            <label for="input-brand-logo-size">브랜드 로고 크기 조절 (높이: <span id="brand-logo-size-val">20</span>px)</label>
+            <input type="range" id="input-brand-logo-size" min="15" max="80" value="20" style="width: 100%; margin-top: 6px;">
+          </div>
+        </div>
+
+        <!-- 2. 제안 기본 정보 -->
+        <div class="form-section">
+          <h3><i class="fa-solid fa-file-signature"></i> 제안서 메인 텍스트</h3>
+          <div class="form-group">
+            <label for="input-proposal-title">제안서 대제목</label>
+            <input type="text" id="input-proposal-title" value="건강증진 프로그램 제안서" placeholder="예: 임직원 건강증진 프로그램 제안서">
+          </div>
+          <div class="form-group">
+            <label for="input-proposal-subtitle">제안서 소제목</label>
+            <input type="text" id="input-proposal-subtitle" value="스마트AI 체형분석 기반 1:1 피지컬케어 & 기업 맞춤형 강의 솔루션 제안" placeholder="예: AI 체형평가 기반 맞춤형 피지컬케어 & 기업 강의 솔루션 제안">
+          </div>
+          <div class="form-group">
+            <label for="input-proposal-date">제안 날짜</label>
+            <input type="text" id="input-proposal-date" value="2026.06.02" placeholder="예: 2026.06.24">
+          </div>
+        </div>
+
+        <!-- 3. 제안 조건 설정 -->
+        <div class="form-section">
+          <h3><i class="fa-solid fa-sliders"></i> 제안 조건 (요약 테이블용)</h3>
+          <div class="form-group">
+            <label for="input-expert-count">파견 강사/전문가 인원</label>
+            <input type="text" id="input-expert-count" value="강사 8명" placeholder="예: 강사 8명(전문가)">
+          </div>
+          <div class="form-group">
+            <label for="input-total-care">일일 케어 가능 총원</label>
+            <input type="text" id="input-total-care" value="제안1안 : 64명 / 제안2안 : 80명" placeholder="예: 32명(전체 대상자)">
+          </div>
+          <div class="form-group">
+            <label for="input-care-time">1인당 케어 시간</label>
+            <input type="text" id="input-care-time" value="제안1 : 30분 (측정+케어+피드백) / 제안2 : 20분 (케어+피드백)" placeholder="예: 30분 (측정 + 케어 + 피드백)">
+          </div>
+          <div class="form-group">
+            <label for="input-operating-time">하루 운영 시간</label>
+            <input type="text" id="input-operating-time" value="1일 집중 파견 (10:00 ~ 16:50)" placeholder="예: 10:00 ~ 17:00 (점심시간 포함)">
+          </div>
+          <div class="form-group">
+            <label for="input-benefits">추가 혜택 및 특이사항</label>
+            <input type="text" id="input-benefits" value="데이터 분석 기반 맞춤형 건강 강의 추천, 협력사 할인 포함" placeholder="예: 조직 건강 리포트 제공">
+          </div>
+        </div>
+
+        <!-- 4. EAP 프로그램 라인업 선택 (10종) -->
+        <div class="form-section">
+          <h3><i class="fa-solid fa-list-check"></i> EAP 제안 프로그램 선택 (최대 10개)</h3>
+          <div class="checkbox-group">
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p1" checked>
+              <span class="checkmark"></span>
+              <span class="label-text">① 피지컬케어 1:1 맞춤 관리 (체형 분석 + 통증 케어)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p2" checked>
+              <span class="checkmark"></span>
+              <span class="label-text">② 오피스 기능성 운동 처방 (1:1 재활 및 체형 교정 운동)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p3" checked>
+              <span class="checkmark"></span>
+              <span class="label-text">③ VDT 증후군 예방 스트레칭 클래스 (오피스 현장 단체 강의)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p4" checked>
+              <span class="checkmark"></span>
+              <span class="label-text">④ 코어 강화 및 바른 자세 운동 클래스 (허리 통증 예방 필라테스)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p5">
+              <span class="checkmark"></span>
+              <span class="label-text">⑤ 직무 스트레스 완화 마인드 케어 (1:1 상담 및 명상 테라피)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p6">
+              <span class="checkmark"></span>
+              <span class="label-text">⑥ 오피스 수기 힐링 테라피 (피로 회복 부분 수기 케어)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p7">
+              <span class="checkmark"></span>
+              <span class="label-text">⑦ 근골격계 질환 예방 소도구 운동 (폼롤러 및 마사지볼 실습)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p8">
+              <span class="checkmark"></span>
+              <span class="label-text">⑧ 리프레시 아로마 향기 테라피 (아로마 테라피 클래스)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p9">
+              <span class="checkmark"></span>
+              <span class="label-text">⑨ 대사증후군 예방 영양 및 식습관 컨설팅 (1:1 영양 상담)</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" class="program-checkbox" value="p10">
+              <span class="checkmark"></span>
+              <span class="label-text">⑩ 조직 활성화 웰니스 워크숍 (팀 빌딩 및 신체 소통 워크숍)</span>
+            </label>
+          </div>
+          <div class="program-edit-section" style="margin-top: 14px;">
+            <h4 class="sub-section-title" id="toggle-program-edit" style="cursor: pointer; font-size: 11.5px; color: #9ca3af; display: flex; align-items: center; gap: 6px; user-select: none;">
+              <i class="fa-solid fa-chevron-right" id="arrow-program-edit"></i> 선택 프로그램 상세 편집/커스텀
+            </h4>
+            <div id="program-edit-list" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px; padding: 12px; background-color: #1f2937; border-radius: 6px; border: 1px solid #374151;">
+              <!-- JS로 동적 생성 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 피지컬케어 운동센터 5호점 포함 여부 및 지점 정보 편집 -->
+        <div class="form-section">
+          <h3><i class="fa-solid fa-map-location-dot"></i> 오프라인 센터 소개</h3>
+          <label class="toggle-container">
+            <input type="checkbox" id="toggle-center" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">피지컬케어 5호점 지점 소개 포함</span>
+          </label>
+          <div class="branch-edit-section" id="branch-edit-wrapper" style="margin-top: 14px;">
+            <h4 class="sub-section-title" id="toggle-branch-edit" style="cursor: pointer; font-size: 11.5px; color: #9ca3af; display: flex; align-items: center; gap: 6px; user-select: none;">
+              <i class="fa-solid fa-chevron-right" id="arrow-branch-edit"></i> 각 지점별 상세 정보 편집
+            </h4>
+            <div id="branch-edit-list" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px; padding: 12px; background-color: #1f2937; border-radius: 6px; border: 1px solid #374151;">
+              <!-- JS로 동적 생성 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. 주식회사 파우 담당자 정보 -->
+        <div class="form-section">
+          <h3><i class="fa-solid fa-address-card"></i> 발신자 연락처 정보</h3>
+          <div class="form-group">
+            <label for="input-contact-phone">대표 전화번호</label>
+            <input type="text" id="input-contact-phone" value="02-6482-9003" placeholder="예: 02-6482-9003">
+          </div>
+          <div class="form-group">
+            <label for="input-contact-email">이메일 주소</label>
+            <input type="text" id="input-contact-email" value="contact@faww.co.kr" placeholder="예: contact@faww.co.kr">
+          </div>
+          <div class="form-group">
+            <label for="input-contact-web">홈페이지 URL</label>
+            <input type="text" id="input-contact-web" value="www.faww.co.kr" placeholder="예: www.faww.co.kr">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 액션 버튼 영역 -->
+    <div class="sidebar-footer">
+      <button id="btn-print" class="btn-primary"><i class="fa-solid fa-file-pdf"></i> PDF 제안서 저장 / 인쇄</button>
+    </div>
+  </div>
+
+  <!-- 제안서 실시간 미리보기 컨테이너 -->
+  <div class="preview-container" id="preview-area" style="--primary-color: #E05349; --primary-light: #FFF5F4; --primary-dark: #A8362E;">
+    
+    <!-- 미리보기 조작 도구 바 (비인쇄 영역) -->
+    <div class="preview-control-bar no-print">
+      <div class="view-mode-buttons">
+        <button id="btn-view-scroll" class="btn-control active"><i class="fa-solid fa-arrows-up-down"></i> 전체 보기</button>
+        <button id="btn-view-slide" class="btn-control"><i class="fa-solid fa-presentation-screen"></i> 슬라이드 쇼 보기</button>
+        <button id="btn-toggle-drag" class="btn-control" style="margin-left: 12px; background-color: #1f2937; border-color: #4b5563;"><i class="fa-solid fa-up-down-left-right"></i> 위치 이동 모드</button>
+      </div>
+      <div class="slide-nav-buttons" id="slide-nav-controls" style="display: none;">
+        <button id="btn-prev-slide" class="btn-nav"><i class="fa-solid fa-chevron-left"></i> 이전</button>
+        <span class="slide-indicator" id="slide-indicator-text">1 / 11</span>
+        <button id="btn-next-slide" class="btn-nav">다음 <i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+    </div>
+    <!-- PAGE 1: 표지 슬라이드 -->
+    <section class="slide slide-cover">
+      <div class="cover-header">
+        <div class="cover-client-logo-box">
+          <span class="client-logo-fallback" id="view-client-logo-text">SK STOA</span>
+          <img src="" alt="Client Logo" class="client-logo-img hidden" id="view-client-logo-img">
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="cover-body">
+        <h1 class="proposal-title" id="view-proposal-title">건강증진 프로그램 제안서</h1>
+        <p class="proposal-subtitle" id="view-proposal-subtitle">스마트AI 체형분석 기반 1:1 피지컬케어 & 기업 맞춤형 강의 솔루션 제안</p>
+      </div>
+      <div class="cover-footer">
+        <div class="date-badge" id="view-proposal-date">2026.06.02</div>
+        <div class="company-tag">(주)파우_피지컬케어 <span class="font-outfit">Family Wholesome Wellness</span></div>
+      </div>
+      <div class="accent-bar-bottom"></div>
+    </section>
+
+    <!-- PAGE 2: 현대 직장인 문제 제기 (VDT 증후군) -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">BACKGROUND</span>
+          <h2>IT 및 사무직 임직원의 장시간 근무는 신체 불균형을 가속화합니다</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2col">
+        <div class="content-left">
+          <p class="body-lead">
+            사무직 임직원은 하루 평균 8시간 이상 모니터 앞에 앉아 근무하는 <strong>VDT(Visual Display Terminals) 환경</strong>에 지속적으로 노출되어 있습니다.
+          </p>
+          <p class="body-text">
+            이러한 고정된 좌식 자세는 근육의 기하학적 정렬을 심각하게 훼손하며, 거북목(FHP), 라운드 숄더, 요추 전만 등 복합적인 근골격계 질환 및 신체 불균형을 유발합니다. 
+          </p>
+          <p class="body-text">
+            이는 임직원의 만성 피로와 통증으로 이어져 신체 기능적 조절 능력을 저하시키고, 궁극적으로 <strong>업무 몰입도를 크게 저해하는 핵심 요인</strong>이 됩니다.
+          </p>
+          <div class="quote-card">
+            "단순히 피로를 풀어주는 것을 넘어, 정밀한 데이터를 기반으로 신체 상태를 직시하고 맞춤형 케어를 제공해야 해결됩니다."
+          </div>
+        </div>
+        <div class="content-right grid-2x2-cards">
+          <div class="stat-card">
+            <span class="stat-label">거북목 증후군 (FHP)</span>
+            <span class="stat-value danger">심각 단계</span>
+            <span class="stat-desc">사무직 군 임상 분석 시 압도적인 발생 비율 확인</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">라운드 숄더</span>
+            <span class="stat-value warning">위험군 44%</span>
+            <span class="stat-desc">3~4단계 수준의 심각한 어깨 전방 경사 불균형</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">요추 전만 및 골반 변위</span>
+            <span class="stat-value warning">경계~심각 44%</span>
+            <span class="stat-desc">장시간 골반 후방 경사 및 요추 정렬 훼손</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">코어 기능 지수</span>
+            <span class="stat-value danger">62.2점</span>
+            <span class="stat-desc">즉각적인 전문가 개입 및 근막 케어가 필요한 위험 지수</span>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">2</span>
+      </div>
+    </section>
+
+    <!-- PAGE 3: 3D AI 스마트 측정 솔루션 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">SOLUTION 01</span>
+          <h2>3D AI 체형분석으로 눈에 보이지 않던 불균형을 즉각 시각화합니다</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2col align-center">
+        <div class="content-left text-center">
+          <!-- AI 기기 목업 및 이미지 영역 -->
+          <div class="ai-mockup-wrapper">
+            <i class="fa-solid fa-desktop ai-device-icon"></i>
+            <span class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> MOTI PHYSIO 3D</span>
+            <div class="ai-highlights">
+              <span class="high-item">정면 촬영</span>
+              <span class="high-item">측면 촬영</span>
+              <span class="high-item">후면 촬영</span>
+            </div>
+          </div>
+          <p class="highlight-box-dark">"단순한 추측이 아닌, 객관적인 정밀 데이터로 증명합니다"</p>
+        </div>
+        <div class="content-right">
+          <p class="body-lead">
+            정교한 센서 기반의 <strong>Moti Physio 3D AI 스마트 체형 분석 기기</strong>를 현장에 설치하여 임직원의 신체 불균형을 입체적으로 측정합니다.
+          </p>
+          <div class="step-list">
+            <div class="step-item-horizontal">
+              <div class="step-num">01</div>
+              <div class="step-info">
+                <h4>정적 체형 위험 지수 (Static Analysis)</h4>
+                <p>관절의 미세한 틀어짐 각도와 정밀 근육 불균형 상태 분석</p>
+              </div>
+            </div>
+            <div class="step-item-horizontal">
+              <div class="step-num">02</div>
+              <div class="step-info">
+                <h4>코어 기능 위험 지수 (Core Analysis)</h4>
+                <p>신체 중심축인 척추 및 요추 밸런스를 지수화하여 골반 상태 추정</p>
+              </div>
+            </div>
+            <div class="step-item-horizontal">
+              <div class="step-num">03</div>
+              <div class="step-info">
+                <h4>밸런스 위험 지수 (Balance Analysis)</h4>
+                <p>좌우 무게중심 쏠림 현상과 관절별 누적 압박도 도출</p>
+              </div>
+            </div>
+          </div>
+          <p class="body-text-sm">
+            ※ 단 몇 분간의 촬영 및 측정으로 개인별 불균형 위험지수(0~100점)와 가장 시급하게 케어가 필요한 위험 부위 TOP 3가 자동 도출되어 1:1 맞춤 솔루션을 설계하는 바탕이 됩니다.
+          </p>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">3</span>
+      </div>
+    </section>
+
+    <!-- PAGE 4: 타사 대비 차별점 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">DIFFERENTIATION</span>
+          <h2>타사 업체와의 차별점: 파우(FaWW)만의 고효율 압도적 케어</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th style="width: 20%;">구분</th>
+              <th style="width: 40%;">전형적인 타사 제안 방식</th>
+              <th style="width: 40%;" class="highlight-col">파우(FaWW) 제안 방식 (권장)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>파견 인원</strong></td>
+              <td>비전문직 알바 강사 위주 배치</td>
+              <td class="highlight-col"><strong>도수/수기 전문 자격 보유 물리치료사 출신 강사 배치</strong></td>
+            </tr>
+            <tr>
+              <td><strong>일일 케어 인원</strong></td>
+              <td>하루 150명 이상 대량 양산형 케어 (공장형 운영)</td>
+              <td class="highlight-col"><strong>전문 강사 집중 투입으로 32명~80명 정밀 고도 케어</strong></td>
+            </tr>
+            <tr>
+              <td><strong>평가 방식</strong></td>
+              <td>상담원의 주관적인 진단 및 마사지 서비스</td>
+              <td class="highlight-col"><strong>3D AI 체형 측정 분석 및 실시간 데이터 리포트 제공</strong></td>
+            </tr>
+            <tr>
+              <td><strong>피드백 제공</strong></td>
+              <td>일회성 체험으로 종료, 사후 가이드 없음</td>
+              <td class="highlight-col"><strong>1:1 맞춤 운동법 안내 및 맞춤 자가 가이드 전달</strong></td>
+            </tr>
+            <tr>
+              <td><strong>조직 결과 보고</strong></td>
+              <td>보고서 제공 없음 또는 단순 출석부 전달</td>
+              <td class="highlight-col"><strong>임직원 전체의 익명성 건강 통계 및 조직 건강 리포트 제공</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="bottom-slogan">
+          "임직원 한 분 한 분을 위한 맞춤형 웰니스 케어 제공을 통해 실질적 개선과 기업 만족도 극대화를 보장합니다."
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">4</span>
+      </div>
+    </section>
+
+    <!-- PAGE 5: 1인 30분 맞춤 케어 프로세스 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">SOLUTION 02</span>
+          <h2>단 30분으로 완성되는 고농축 정밀 1:1 피지컬케어 프로세스</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body">
+        <p class="body-lead text-center">
+          개인별로 할당된 30분은 <strong>AI 정밀 측정 &rarr; 수기 근막 케어 &rarr; 운동 처방 피드백</strong>이 유기적으로 연결된 고밀도 사이클로 진행됩니다.
+        </p>
+        <div class="process-cards">
+          <div class="process-card">
+            <div class="card-time-badge">10 mins</div>
+            <div class="card-step">STEP 01</div>
+            <h3>AI 측정 및 체형평가</h3>
+            <div class="card-divider"></div>
+            <ul>
+              <li>Moti Physio 3D 촬영</li>
+              <li>신체 불균형 즉각 수치화</li>
+              <li>통증 유발 골반/척추 정렬 분석</li>
+              <li>개인별 취약 부위 통계화</li>
+            </ul>
+          </div>
+          
+          <div class="process-card highlight-card">
+            <div class="card-time-badge">15 mins</div>
+            <div class="card-step">STEP 02</div>
+            <h3>1:1 맞춤형 피지컬케어</h3>
+            <div class="card-divider"></div>
+            <ul>
+              <li>AI 데이터 기반의 집중 근막 이완</li>
+              <li>물리치료 기반 맞춤 수기 도수 기법</li>
+              <li>근육 긴장 완화 및 관절 가동성 회복</li>
+              <li>경추/요추 부위 통증 집중 케어</li>
+            </ul>
+          </div>
+
+          <div class="process-card">
+            <div class="card-time-badge">5 mins</div>
+            <div class="card-step">STEP 03</div>
+            <h3>개인 맞춤형 처방 피드백</h3>
+            <div class="card-divider"></div>
+            <ul>
+              <li>현장 1:1 맞춤형 스트레칭 교정</li>
+              <li>자가 관리 스트레칭 처방 가이드</li>
+              <li>사무공간 최적화 데스크 세팅 안내</li>
+              <li>사후 효과 유지를 위한 피드백 전달</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">5</span>
+      </div>
+    </section>
+
+    <!-- PAGE 6: 1:1 피지컬케어 정밀 기법 상세 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">SOLUTION 02 (DETAIL)</span>
+          <h2>피지컬케어 1:1 맞춤형 케어 핵심 기법 소개</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2x2-icons">
+        <div class="icon-detail-card">
+          <div class="card-icon-area">
+            <i class="fa-solid fa-hands-holding-child"></i>
+          </div>
+          <div class="card-content-area">
+            <h3>수기 치료 및 패시브 스트레칭 (Passive Stretching)</h3>
+            <p>전문가의 제어 하에 진행되는 정교한 스트레칭 기법으로, 단축되어 있는 타이트한 근막 조직을 점진적으로 이완하여 관절의 정상 가동 범위를 신속히 회복시킵니다.</p>
+          </div>
+        </div>
+        <div class="icon-detail-card">
+          <div class="card-icon-area">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+          <div class="card-content-area">
+            <h3>MCT 근막이완 테크닉 (Myofascial Release)</h3>
+            <p>의료용 전용 메탈 바 도구를 활용하여 근육을 둘러싸고 있는 근막 구조물의 유착을 정밀 박리하고 혈류의 흐름을 촉진시켜, 만성적인 결림과 통증을 유의미하게 해소합니다.</p>
+          </div>
+        </div>
+        <div class="icon-detail-card">
+          <div class="card-icon-area">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div class="card-content-area">
+            <h3>진동건 테라피 (Thera Gun Therapy)</h3>
+            <p>고속 고진동 충격을 심부 근육층까지 전달하여 깊숙이 뭉쳐있는 통증 유발점(Trigger Point)을 빠르게 이완하며, 림프 순환을 돕고 피로물질의 빠른 배출을 촉진합니다.</p>
+          </div>
+        </div>
+        <div class="icon-detail-card">
+          <div class="card-icon-area">
+            <i class="fa-solid fa-bandage"></i>
+          </div>
+          <div class="card-content-area">
+            <h3>키네시오 스포츠 테이핑 (Sports Taping)</h3>
+            <p>피지컬케어 후 약해진 인대와 근육을 물리적으로 부드럽게 지지하여 안정성을 공급하고 올바른 자세 유지를 서포트하여, 당일 케어의 유효 효과를 현업 복귀 후에도 길게 유지시킵니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">6</span>
+      </div>
+    </section>
+
+    <!-- PAGE 7: 이번 제안 EAP 프로그램 라인업 (동적 렌더링 영역) -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">EAP PROGRAM LIST</span>
+          <h2>제안 드리는 맞춤 웰니스 EAP 프로그램 라인업</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body">
+        <p class="body-lead text-center">
+          임직원분들의 근무 여건 및 건강 필요도에 맞추어 아래의 프리미엄 EAP 프로그램을 설계 제안합니다.
+        </p>
+        <div class="program-grid" id="selected-programs-grid">
+          <!-- index.js에서 사용자가 선택한 EAP 프로그램들이 여기에 그리드 카드로 생성됩니다. -->
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">7</span>
+      </div>
+    </section>
+
+    <!-- PAGE 8: 임직원 단체 건강 강의 제안 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">SOLUTION 03</span>
+          <h2>데이터 기반 맞춤 강의: 사내 건강문화 확산을 위한 단체 클래스</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2col align-center">
+        <div class="content-left">
+          <h3>통계 기반 커리큘럼 추천</h3>
+          <p class="body-text">
+            1:1 피지컬케어 진행 중 축적되는 임직원 전체의 3D 체형 데이터를 암호화하여 통계 분석합니다. 귀사 임직원에게서 가장 두드러지게 관찰되는 고위험 신체 이상 징후 유형을 추출하여 최적의 단체 강의 주제를 도출해 냅니다.
+          </p>
+          <h3>실습 중심의 즉각형 교육</h3>
+          <p class="body-text">
+            단순한 이론 주입식 건강 교육을 지양합니다. 개인 업무 공간(데스크)에서 의자와 간단한 소도구를 사용해 즉각 적용해 볼 수 있는 체험 위주 실전형 웰니스 레슨을 진행합니다.
+          </p>
+          <div class="lectures-mini-list">
+            <div class="lecture-mini-item">
+              <span class="badge-mini">강의 A</span> <strong>VDT 증후군 타파 오피스 스트레칭</strong>
+            </div>
+            <div class="lecture-mini-item">
+              <span class="badge-mini">강의 B</span> <strong>허리 통증 완화 앉아서 하는 코어 운동법</strong>
+            </div>
+          </div>
+        </div>
+        <div class="content-right grid-2col-compact-lectures">
+          <div class="lecture-card-detailed">
+            <div class="lec-icon"><i class="fa-solid fa-desktop"></i></div>
+            <h4>[VDT 증후군 타파]</h4>
+            <p>거북목, 손목 터널 증후군 예방을 위한 오피스 스트레칭</p>
+          </div>
+          <div class="lecture-card-detailed">
+            <div class="lec-icon"><i class="fa-solid fa-person-running"></i></div>
+            <h4>[코어 강화 솔루션]</h4>
+            <p>허리 통증 완화를 위한 앉아서 간편히 하는 코어 훈련</p>
+          </div>
+          <div class="lecture-card-detailed">
+            <div class="lec-icon"><i class="fa-solid fa-dumbbell"></i></div>
+            <h4>[근골격계 자가 관리]</h4>
+            <p>소도구(폼롤러, 마사지볼) 활용 전신 근막 이완 실습</p>
+          </div>
+          <div class="lecture-card-detailed">
+            <div class="lec-icon"><i class="fa-solid fa-chair"></i></div>
+            <h4>[바른 자세의 정석]</h4>
+            <p>업무 생산성을 높이는 인체공학 데스크 세팅 및 밀착 자세 교정</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number">8</span>
+      </div>
+    </section>
+
+    <!-- PAGE 9: 피지컬케어 운동센터 5호점 소개 슬라이드 (동적 토글 가능) -->
+    <section class="slide" id="slide-centers">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">OFFLINE CENTER SPECIAL BENEFITS</span>
+          <h2>사외에서도 지속되는 오프라인 '피지컬케어' 운동센터 연계 혜택</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2col">
+        <div class="content-left">
+          <p class="body-lead">
+            파우(FaWW)는 사내 EAP 케어에 그치지 않고, 임직원들이 퇴근 후나 주말에도 체계적인 통증 케어와 교정 운동을 받을 수 있는 <strong>오프라인 전문 운동센터 5개 지점</strong>을 운영 중입니다.
+          </p>
+          <div class="center-benefits-box">
+            <h4><i class="fa-solid fa-award"></i> 제휴 기업 임직원 특별 혜택</h4>
+            <ul>
+              <li>전 지점 1:1 PT 및 체형 교정 프로그램 <strong>회원가 추가 10%~20% 할인</strong></li>
+              <li>사내 3D AI 체형 데이터 지점 연계 시스템 (사내 측정 결과를 센터 강사가 연동하여 전문 관리)</li>
+              <li>가족 동반 등록 시 동일 임직원 할인 혜택 확대 적용</li>
+            </ul>
+          </div>
+          <p class="body-text-sm">
+            ※ 제안 기업 임직원을 대상으로 사외 운동센터 이용권을 기업 복지 포인트 결제 또는 임직원 특가로 이용할 수 있도록 커스텀 바우처를 설계해 드립니다.
+          </p>
+        </div>
+        <div class="content-right">
+          <h3><i class="fa-solid fa-store"></i> 피지컬케어 전문 센터 지점 안내 (5호점)</h3>
+          <div class="center-branch-list" id="selected-branches-container">
+            <!-- index.js에서 지점 정보가 동적으로 생성됩니다. -->
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number" id="page-num-centers">9</span>
+      </div>
+    </section>
+
+    <!-- PAGE 10: 도입 기대효과 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">EXPECTED EFFECTS</span>
+          <h2>EAP 프로그램 도입에 따른 임직원 건강 및 조직 활성화 기대효과</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2x2-effects">
+        <div class="effect-card">
+          <div class="effect-icon-box"><i class="fa-solid fa-chart-line"></i></div>
+          <h3>업무 몰입도 극대화</h3>
+          <p>만성 통증 및 결림 해소를 통한 직무 몰입 장애 개선. 신체적 불편감 경감으로 업무 생산성 약 15% 이상 향상 기대.</p>
+        </div>
+        <div class="effect-card">
+          <div class="effect-icon-box"><i class="fa-solid fa-shield-halved"></i></div>
+          <h3>의료비 지출 리스크 예방</h3>
+          <p>3D 체형 진단 기기를 통해 잠재적인 근골격계 질환 조기 진단 및 맞춤 운동을 처방하여 장기적인 만성 질환 의료 부담 선제 차단.</p>
+        </div>
+        <div class="effect-card">
+          <div class="effect-icon-box"><i class="fa-solid fa-heart"></i></div>
+          <h3>기업 애사심 고취 및 복지 체감</h3>
+          <p>대량으로 인원만 채우는 단순 마사지 복지가 아닌, 1:1로 진행되는 명품 피지컬 케어를 경험함으로써 기업 복지 만족도 및 소속감 강화.</p>
+        </div>
+        <div class="effect-card">
+          <div class="effect-icon-box"><i class="fa-solid fa-file-medical"></i></div>
+          <h3>조직 건강 리포트 제공</h3>
+          <p>임직원 전체의 통계 데이터를 익명 가공하여 수신 기업의 직무 환경 개선과 차년도 사내 보건 의료 정책 수립을 위한 맞춤 지표 리포팅.</p>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number" id="page-num-effects">10</span>
+      </div>
+    </section>
+
+    <!-- PAGE 11: 최종 제안 조건 요약 및 견적 -->
+    <section class="slide">
+      <div class="slide-header">
+        <div class="slide-title-wrapper">
+          <span class="slide-category">PROPOSAL DETAILS</span>
+          <h2>임직원 건강 복지 EAP 프로그램 제안 조건 요약</h2>
+        </div>
+        <img src="이미지/파우 로고.png" alt="FaWW Logo" class="faww-logo-top">
+      </div>
+      <div class="slide-body grid-2col">
+        <div class="content-left">
+          <table class="details-table">
+            <tbody>
+              <tr>
+                <th>운영 방식</th>
+                <td id="view-expert-count">강사 8명 1일 집중 파견</td>
+              </tr>
+              <tr>
+                <th>총 케어 인원</th>
+                <td id="view-total-care">제안1안 : 64명 / 제안2안 : 80명</td>
+              </tr>
+              <tr>
+                <th>1인 케어 시간</th>
+                <td id="view-care-time">제안1 : 30분 (측정+케어+피드백) / 제안2 : 20분 (케어+피드백)</td>
+              </tr>
+              <tr>
+                <th>운영 일정</th>
+                <td id="view-operating-time">1일 집중 파견 (10:00 ~ 16:50)</td>
+              </tr>
+              <tr>
+                <th>추가 혜택</th>
+                <td id="view-benefits">데이터 분석 기반 맞춤형 건강 강의 추천, 협력사 할인 포함</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="body-text-sm" style="margin-top: 15px;">
+            ※ 세부 일정 조율, 전문 물리치료 강사 배정 및 상세 예산 내역 조율은 파우 EAP 전담 코디네이터와의 상의를 거쳐 협의 및 변경이 유연하게 가능합니다.
+          </p>
+        </div>
+        <div class="content-right text-center flex-column justify-center align-center">
+          <div class="cost-optimize-card">
+            <h3><i class="fa-solid fa-sack-dollar"></i> 집중 파견 방식의 예산 효율성</h3>
+            <div class="card-divider-light"></div>
+            <ul>
+              <li><i class="fa-solid fa-circle-check"></i> 다회차 분산 파견 대비 강사 출장료 및 장비 렌탈 물류비 <strong>최대 60% 절감</strong></li>
+              <li><i class="fa-solid fa-circle-check"></i> 하루 공간 집중 사용으로 부서별 장소 관리 리소스 대폭 세이브</li>
+              <li><i class="fa-solid fa-circle-check"></i> 협력사 특별 프로모션 적용 및 세금 혜택 컨설팅 동시 진행</li>
+            </ul>
+            <div class="badge-price">가장 합리적인 비용 제안</div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>FaWW Physical Care EAP Proposal</span>
+        <span class="page-number" id="page-num-details">11</span>
+      </div>
+    </section>
+
+    <!-- PAGE 12: 마무리 표지 -->
+    <section class="slide slide-closing">
+      <div class="closing-container">
+        <!-- 파우미 마스코트 이미지와 슬로건을 나란히 배치하여 wowed 효과 극대화 -->
+        <div class="mascot-wrapper">
+          <img src="이미지/파우미.png" alt="Mascot Pawmi" class="faww-mascot-img">
+          <div class="bubble">안녕하세요! 파우의 마스코트 <strong>파우미</strong>입니다. 임직원분들의 몸과 마음의 행복을 책임지겠습니다!</div>
+        </div>
+        <div class="closing-title-area">
+          <h2>건강한 <span class="client-name-closing highlight-text" id="view-client-name-closing">SK STOA</span>를 위한<br>가장 든든한 파트너가 되겠습니다.</h2>
+          <p>기업 임직원의 웰니스 라이프를 맞춤 설계하는 파우 EAP 서비스팀이 귀사의 건강 복지를 완벽히 서포트합니다.</p>
+        </div>
+        
+        <div class="closing-contact-area">
+          <div class="contact-item">
+            <i class="fa-solid fa-phone"></i>
+            <span id="view-contact-phone">02-6482-9003</span>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-envelope"></i>
+            <span id="view-contact-email">contact@faww.co.kr</span>
+          </div>
+          <div class="contact-item">
+            <i class="fa-solid fa-globe"></i>
+            <span id="view-contact-web">www.faww.co.kr</span>
+          </div>
+        </div>
+        <div class="footer-logo">
+          <img src="이미지/파우 로고.png" alt="FaWW Logo">
+          <img src="이미지/피지컬케어 로고.jpg" alt="Physical Care Logo">
+        </div>
+      </div>
+      <div class="accent-bar-bottom"></div>
+    </section>
+
+  </div>
+
+  <!-- 이미지 AI 에디터 모달 -->
+  <div id="image-editor-modal" class="editor-modal-overlay no-print hidden">
+    <div class="editor-modal-container">
+      <div class="editor-modal-header">
+        <h3><i class="fa-solid fa-wand-magic-sparkles"></i> 이미지 AI 고급 편집</h3>
+        <button id="btn-close-image-editor" class="btn-modal-close">&times;</button>
+      </div>
+      <div class="editor-modal-body">
+        <div class="editor-canvas-area">
+          <canvas id="image-editor-canvas"></canvas>
+          <!-- 스캔 라인 애니메이션 (AI 분석 연출용) -->
+          <div id="editor-scan-line" class="scan-line hidden"></div>
+          <!-- 로딩 스피너 -->
+          <div id="editor-loader" class="editor-loader-overlay hidden">
+            <div class="loader-spinner"></div>
+            <div id="editor-loader-text" class="loader-text">AI 분석 중...</div>
+          </div>
+        </div>
+        <div class="editor-control-panel">
+          <div class="editor-section">
+            <h4><i class="fa-solid fa-microchip"></i> AI 원클릭 기능</h4>
+            <div class="editor-buttons-row">
+              <button id="btn-ai-bg-remove" class="btn-editor-action"><i class="fa-solid fa-scissors"></i> 배경 제거 (누끼)</button>
+              <button id="btn-ai-enhance" class="btn-editor-action"><i class="fa-solid fa-wand-magic-sparkles"></i> 화질 개선</button>
+            </div>
+          </div>
+          <div class="editor-section">
+            <h4><i class="fa-solid fa-eraser"></i> 부분 지우개 (Object Eraser)</h4>
+            <label class="toggle-container" style="margin-bottom: 12px;">
+              <input type="checkbox" id="toggle-eraser-mode">
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">지우개 모드 활성화</span>
+            </label>
+            <div class="form-group" id="eraser-brush-group" style="display: none;">
+              <label for="input-eraser-brush-size">지우개 크기 (<span id="eraser-brush-size-val">15</span>px)</label>
+              <input type="range" id="input-eraser-brush-size" min="5" max="50" value="15" style="width: 100%; margin-top: 6px;">
+            </div>
+          </div>
+          <div class="editor-help-box">
+            <p><i class="fa-solid fa-circle-info"></i> 편집할 이미지를 더블클릭하면 이 에디터가 열립니다.</p>
+            <p><i class="fa-solid fa-circle-info"></i> 부분 지우개는 마우스 드래그로 문질러서 투명하게 지울 수 있습니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="editor-modal-footer">
+        <button id="btn-cancel-image-edit" class="btn-secondary">취소</button>
+        <button id="btn-apply-image-edit" class="btn-primary-action">편집 완료 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
